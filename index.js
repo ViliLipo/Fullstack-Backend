@@ -23,103 +23,83 @@ app.use(morgan(function (tokens, req, res) {
   ].join(' ')
 }))
 
-let persons = [
-    {
-      "name": "Jaromir Jagr",
-      "number": "15612611",
-      "id": 1
-    },
-    {
-      "name": "Petteri Nummelin",
-      "number": "15-66167223",
-      "id": 2
-    },
-    {
-      "name": "Olli Jokinen",
-      "number": "156161",
-      "id": 3
-    },
-    {
-      "name": "Teemu Selänne",
-      "number": "8",
-      "id": 4
-    },
-    {
-      "name": "Tuomo Ruutu",
-      "number": "56617878",
-      "id": 5
-    },
-    {
-      "name": "Jere Karalahti",
-      "number": "15006715",
-      "id": 6
-    },
-    {
-      "name": "Jere Lehtinen",
-      "number": "5161356",
-      "id": 7
-    },
-    {
-      "name": "Ville Peltonen",
-      "number": "516673452",
-      "id": 8
-    },
-    {
-      "name": "Matti Nykänen",
-      "number": "15616233",
-      "id": 9
-    }
-  ]
+const Person = require('./models/person')
 
 
 app.get('/api/persons', (req, res) => {
-  res.json(persons)
+  Person.find({}).then(persons => {
+    res.json(persons.map(Person.format))
+  }).catch(error => {
+    console.log(error)
+    res.status(400).end()
+  })
 })
 
 app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  const person = persons.find(person => person.id === id)
-  //console.log(person)
-  if(person) {
-    res.json(person)
-  }else {
-    res.status(404).json({error: 'no such id'})
-  }
+  const id = req.params.id
+  Person
+        .findById(id)
+        .then(person => {
+          res.json(Person.format(person))
+        }).catch(error => {
+          console.log(error)
+          res.status(400).end()
+        })
 })
 app.post('/api/persons/', (req, res)=> {
   const body = req.body
   if (body.name === undefined) {
     return res.status(400).json({error: 'name missing'})
   }
-  const id = generateId()
-  if(persons.find(person => person.name === body.name)) {
-    console.log("non-uniquename")
-    return res.status(400).json({error: 'name must be unique'})
-  }
-  if( persons.find(person => person.id === id)) {
-    console.log("failed id genaration")
-    return res.status(400).json({error:'id generation exception'})
-  }
-  const person = {
-    name: body.name,
-    number: body.number,
-    id
-  }
-  persons = persons.concat(person)
-  res.json(person)
+  console.log("lel")
+  Person.find({name: body.name}).then(found => {
+    console.log(found[0])
+    if(found[0] === undefined) {
+
+      const person = new Person ({
+        name: body.name,
+        number: body.number
+      })
+      person
+            .save()
+            .then(savedPerson => {
+              res.json(Person.format(savedPerson))
+            }).catch(error => {
+              console.log(error)
+              res.status(400).end()
+            })
+    } else {
+            res.status(400).send({error: 'non unique name'})
+    }
+  })
+
 })
 
 app.delete('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  const person = persons.find(person => person.id === id)
-  if(person) {
-    console.log(person, "poistetaan")
-    persons = persons.filter(person => person.id !== id)
-    res.status(204).end()
-  } else {
-    console.log("person not found on delete")
-    res.status(204).json({error: 'no such id'})
+  Person
+        .findByIdAndRemove(req.params.id)
+        .then(result => {
+          res.status(204).end()
+        })
+        .catch(error => {
+          res.status(400).send({error:'malformatted id'})
+        })
+})
+
+app.put('/api/persons/:id', (req,res) => {
+  const body = req.body
+  const person = {
+    name : body.name,
+    number : body.number
   }
+  Person
+        .findByIdAndUpdate(req.body.id, person, {new: true})
+        .then(updatedPerson => {
+          res.json(Person.format(updatedPerson))
+        }).catch(error => {
+          //console.log(error)
+          res.status(400).send({error: 'malformatted id'})
+        })
 })
 
 app.get('/info',(req,res) => {
