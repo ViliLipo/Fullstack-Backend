@@ -1,6 +1,10 @@
 const mongoose = require('mongoose')
 
-const url = 'mongodb://admin:memelord@ds119258.mlab.com:19258/persons'
+if( process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
+}
+const url = process.env.MONGODB_URL
+//'mongodb://admin:memelord@ds119258.mlab.com:19258/persons'
 
 const Schema = mongoose.Schema
 

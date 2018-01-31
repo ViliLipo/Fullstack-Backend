@@ -51,11 +51,8 @@ app.post('/api/persons/', (req, res)=> {
   if (body.name === undefined) {
     return res.status(400).json({error: 'name missing'})
   }
-  console.log("lel")
   Person.find({name: body.name}).then(found => {
-    console.log(found[0])
     if(found[0] === undefined) {
-
       const person = new Person ({
         name: body.name,
         number: body.number
