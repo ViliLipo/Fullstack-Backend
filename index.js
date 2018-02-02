@@ -48,8 +48,11 @@ app.get('/api/persons/:id', (req, res) => {
 })
 app.post('/api/persons/', (req, res)=> {
   const body = req.body
-  if (body.name === undefined) {
+  if (body.name === undefined || body.name === '') {
     return res.status(400).json({error: 'name missing'})
+  }
+  if(body.number === undefined || body.number === '') {
+    return res.status(400).json({error: 'number missing'})
   }
   Person.find({name: body.name}).then(found => {
     if(found[0] === undefined) {
